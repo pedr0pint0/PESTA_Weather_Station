@@ -1,0 +1,1 @@
+@reboot sleep 120 &&  /home/cister/WeatherStation/weather/bin/python /home/cister/WeatherStation/centralmqttinflux.py >> /home/cister/WeatherStation/log_central.txt 2>&1
