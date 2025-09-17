@@ -1,0 +1,3222 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Apresenta em tempo real a temperatura, pressão, velocidade e direção do vento, qualidade do ar (PM2.5, PM10, AQI, formaldeído, VOC, CO2), humidade, localização GPS, altitude.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Cada pétala aponta para a direção de onde vem o vento,Quanto mais longa for a pétala, mais vezes o vento soprou dessa direção.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "cardinalLabels": "intermediate",
+        "colorPalette": "default",
+        "doesLegendOverlay": false,
+        "legendAnchor": "center",
+        "legendPosition": "right",
+        "petalsPer90Deg": 2,
+        "showLegend": true,
+        "speedBucketsCount": 5,
+        "speedBucketsSize": 2,
+        "speedBucketsSizeAuto": true,
+        "tooltipDecimalPlaces": 1,
+        "windSpeedUnit": "ms",
+        "windroseLabels": "compass"
+      },
+      "pluginVersion": "1.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eesst9edo6ltse"
+          },
+          "hide": false,
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\" and r._field == \"Direcao_Graus\")\n  |> aggregateWindow(every: 1m, fn: last, createEmpty: false)\n  |> rename(columns: {_value: \"wind_direction\"})\n  |> keep(columns: [\"_time\", \"wind_direction\"])\n",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eesst9edo6ltse"
+          },
+          "hide": false,
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\" and r._field == \"Velocidade_Vento\")\n  |> aggregateWindow(every: 1m, fn: last, createEmpty: false)\n  |> rename(columns: {_value: \"wind_speed\"})\n  |> keep(columns: [\"_time\", \"wind_speed\"])\n",
+          "refId": "B"
+        }
+      ],
+      "title": "Wind Rose",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "_time",
+            "mode": "inner"
+          }
+        }
+      ],
+      "type": "operato-windrose-panel"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Concentração média compostos organicos volateis na ultima hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "tVOC",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 5.5,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              },
+              {
+                "color": "dark-green",
+                "value": 0
+              },
+              {
+                "color": "dark-yellow",
+                "value": 0.221
+              },
+              {
+                "color": "dark-orange",
+                "value": 0.661
+              },
+              {
+                "color": "dark-red",
+                "value": 1.431
+              },
+              {
+                "color": "dark-purple",
+                "value": 2.201
+              },
+              {
+                "color": "#3916df",
+                "value": 3.301
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 20,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"voc\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Concentração tVOC(1h)",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Valor médio PM2.5 ultima hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "PM2.5",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 200,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "dark-orange",
+                "value": 55
+              },
+              {
+                "color": "dark-red",
+                "value": 110
+              },
+              {
+                "color": "dark-red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "conμgm3"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 11,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"pm25\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Concentração PM2.5(1h)",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Ultimo valor recolhido de temperatura do sensor de formaldehido",
+      "fieldConfig": {
+        "defaults": {
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 45,
+          "min": -5,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": -5
+              },
+              {
+                "color": "dark-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-orange",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 35
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "/^temperature$/",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {}
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -5m)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperatura SF",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Valor médio PM10 ultima hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "PM10",
+          "fieldMinMax": false,
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "index": 0,
+                  "text": "Excelente"
+                },
+                "to": 25
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 26,
+                "result": {
+                  "index": 1,
+                  "text": "Bom"
+                },
+                "to": 50
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 51,
+                "result": {
+                  "index": 2,
+                  "text": "Poluição Ligeira"
+                },
+                "to": 90
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 91,
+                "result": {
+                  "index": 3,
+                  "text": "Poluição Moderada"
+                },
+                "to": 180
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 181,
+                "result": {
+                  "index": 4,
+                  "text": "Poluição Elevada"
+                },
+                "to": 200
+              },
+              "type": "range"
+            }
+          ],
+          "max": 200,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 25
+              },
+              {
+                "color": "dark-yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 90
+              },
+              {
+                "color": "dark-orange",
+                "value": 180
+              },
+              {
+                "color": "dark-red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "conμgm3"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"pm10\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Valor médio PM2.5 ultima hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "PM2.5",
+          "fieldMinMax": false,
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "index": 0,
+                  "text": "Excelente"
+                },
+                "to": 15
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 16,
+                "result": {
+                  "index": 1,
+                  "text": "Bom"
+                },
+                "to": 30
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 31,
+                "result": {
+                  "index": 2,
+                  "text": "Poluição Ligeira"
+                },
+                "to": 55
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 56,
+                "result": {
+                  "index": 3,
+                  "text": "Poluição Moderada"
+                },
+                "to": 110
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 111,
+                "result": {
+                  "index": 4,
+                  "text": "Poluição Elevada"
+                },
+                "to": 200
+              },
+              "type": "range"
+            }
+          ],
+          "max": 200,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-yellow",
+                "value": 30
+              },
+              {
+                "color": "orange",
+                "value": 55
+              },
+              {
+                "color": "dark-orange",
+                "value": 110
+              },
+              {
+                "color": "dark-red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "conμgm3"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 4
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"pm25\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "AQI index medio ultima hora",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "AQI",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 120,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 25
+              },
+              {
+                "color": "dark-yellow",
+                "value": 50
+              },
+              {
+                "color": "dark-orange",
+                "value": 75
+              },
+              {
+                "color": "dark-red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 5
+      },
+      "id": 14,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {}
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"aqi\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "AQI Index (1h)",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Valor médio PM10 ultima hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "PM10",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 200,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 25
+              },
+              {
+                "color": "dark-yellow",
+                "value": 50
+              },
+              {
+                "color": "dark-orange",
+                "value": 90
+              },
+              {
+                "color": "dark-red",
+                "value": 180
+              },
+              {
+                "color": "dark-red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "conμgm3"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 5
+      },
+      "id": 10,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {}
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"pm10\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Concentração PM10(1h)",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Ultimo valor recolhido de temperatura do sensor BMP280",
+      "fieldConfig": {
+        "defaults": {
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 45,
+          "min": -5,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": -5
+              },
+              {
+                "color": "dark-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-orange",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 35
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 5
+      },
+      "id": 3,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "/^Temp_BMP280$/",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {}
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -10m)  \n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Temp_BMP280\")\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperatura BMP280",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "AQI index medio ultima hora",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "AQI",
+          "fieldMinMax": false,
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "index": 0,
+                  "text": "Excelente"
+                },
+                "to": 25
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 26,
+                "result": {
+                  "index": 1,
+                  "text": "Boa"
+                },
+                "to": 50
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 51,
+                "result": {
+                  "index": 2,
+                  "text": "Poluição Ligeira"
+                },
+                "to": 75
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 76,
+                "result": {
+                  "index": 3,
+                  "text": "Poluição Moderada"
+                },
+                "to": 100
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 101,
+                "result": {
+                  "index": 4,
+                  "text": "Poluição Severa"
+                },
+                "to": 120
+              },
+              "type": "range"
+            }
+          ],
+          "max": 120,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 25
+              },
+              {
+                "color": "dark-yellow",
+                "value": 50
+              },
+              {
+                "color": "orange",
+                "value": 75
+              },
+              {
+                "color": "dark-orange",
+                "value": 100
+              },
+              {
+                "color": "dark-red",
+                "value": 120
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 8
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"aqi\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Velocidade Vento neste momento.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 33,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "super-light-blue"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0.2
+              },
+              {
+                "color": "light-blue",
+                "value": 1.5
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 3.3
+              },
+              {
+                "color": "light-green",
+                "value": 5.4
+              },
+              {
+                "color": "green",
+                "value": 7.9
+              },
+              {
+                "color": "dark-green",
+                "value": 10.7
+              },
+              {
+                "color": "super-light-yellow",
+                "value": 13.8
+              },
+              {
+                "color": "yellow",
+                "value": 17.1
+              },
+              {
+                "color": "light-orange",
+                "value": 20.7
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 24.4
+              },
+              {
+                "color": "dark-orange",
+                "value": 28.4
+              },
+              {
+                "color": "semi-dark-red",
+                "value": 32.6
+              },
+              {
+                "color": "dark-red",
+                "value": 32.7
+              }
+            ]
+          },
+          "unit": "velocityms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Velocidade_Vento"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Velocidade do Vento"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 0,
+        "y": 10
+      },
+      "id": 17,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Velocidade_Vento\" )\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Velocidade Vento neste momento.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "index": 0,
+                  "text": "Calm"
+                },
+                "to": 0.2
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 0.21,
+                "result": {
+                  "index": 1,
+                  "text": "Light air "
+                },
+                "to": 1.5
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 1.6,
+                "result": {
+                  "index": 2,
+                  "text": "Light breeze"
+                },
+                "to": 3.3
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 3.4,
+                "result": {
+                  "index": 3,
+                  "text": "Gentle breeze "
+                },
+                "to": 5.4
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 5.5,
+                "result": {
+                  "index": 4,
+                  "text": " Moderate breeze"
+                },
+                "to": 7.9
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 8,
+                "result": {
+                  "index": 5,
+                  "text": "Fresh breeze "
+                },
+                "to": 10.7
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 10.8,
+                "result": {
+                  "index": 6,
+                  "text": "Strong breeze"
+                },
+                "to": 13.8
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 13.9,
+                "result": {
+                  "index": 7,
+                  "text": "Moderate gale"
+                },
+                "to": 17.1
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 17.2,
+                "result": {
+                  "index": 8,
+                  "text": "Gale"
+                },
+                "to": 20.7
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 20.8,
+                "result": {
+                  "index": 9,
+                  "text": "Strong gale"
+                },
+                "to": 24.4
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 24.5,
+                "result": {
+                  "index": 10,
+                  "text": "Storm"
+                },
+                "to": 28.4
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 28.5,
+                "result": {
+                  "index": 11,
+                  "text": "Violent storm"
+                },
+                "to": 32.6
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 32.7,
+                "result": {
+                  "index": 12,
+                  "text": "Hurricane"
+                },
+                "to": 40
+              },
+              "type": "range"
+            }
+          ],
+          "max": 33,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0.2
+              },
+              {
+                "color": "light-blue",
+                "value": 1.5
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 3.3
+              },
+              {
+                "color": "light-green",
+                "value": 5.4
+              },
+              {
+                "color": "green",
+                "value": 7.9
+              },
+              {
+                "color": "dark-green",
+                "value": 10.7
+              },
+              {
+                "color": "super-light-yellow",
+                "value": 13.8
+              },
+              {
+                "color": "yellow",
+                "value": 17.1
+              },
+              {
+                "color": "light-orange",
+                "value": 20.7
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 24.4
+              },
+              {
+                "color": "dark-orange",
+                "value": 28.4
+              },
+              {
+                "color": "semi-dark-red",
+                "value": 32.6
+              },
+              {
+                "color": "dark-red",
+                "value": 32.7
+              }
+            ]
+          },
+          "unit": "velocityms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 5,
+        "y": 10
+      },
+      "id": 18,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Velocidade_Vento\" )\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Velocidade Vento neste momento.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "index": 0,
+                  "text": "Calm"
+                },
+                "to": 0.2
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 0.21,
+                "result": {
+                  "index": 1,
+                  "text": "Light air "
+                },
+                "to": 1.5
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 1.6,
+                "result": {
+                  "index": 2,
+                  "text": "Light breeze"
+                },
+                "to": 3.3
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 3.4,
+                "result": {
+                  "index": 3,
+                  "text": "Gentle breeze "
+                },
+                "to": 5.4
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 5.5,
+                "result": {
+                  "index": 4,
+                  "text": " Moderate breeze"
+                },
+                "to": 7.9
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 8,
+                "result": {
+                  "index": 5,
+                  "text": "Fresh breeze "
+                },
+                "to": 10.7
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 10.8,
+                "result": {
+                  "index": 6,
+                  "text": "Strong breeze"
+                },
+                "to": 13.8
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 13.9,
+                "result": {
+                  "index": 7,
+                  "text": "Moderate gale"
+                },
+                "to": 17.1
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 17.2,
+                "result": {
+                  "index": 8,
+                  "text": "Gale"
+                },
+                "to": 20.7
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 20.8,
+                "result": {
+                  "index": 9,
+                  "text": "Strong gale"
+                },
+                "to": 24.4
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 24.5,
+                "result": {
+                  "index": 10,
+                  "text": "Storm"
+                },
+                "to": 28.4
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 28.5,
+                "result": {
+                  "index": 11,
+                  "text": "Violent storm"
+                },
+                "to": 32.6
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 32.7,
+                "result": {
+                  "index": 12,
+                  "text": "Hurricane"
+                },
+                "to": 40
+              },
+              "type": "range"
+            }
+          ],
+          "max": 33,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              },
+              {
+                "color": "super-light-blue",
+                "value": 0.2
+              },
+              {
+                "color": "light-blue",
+                "value": 1.5
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 3.3
+              },
+              {
+                "color": "light-green",
+                "value": 5.4
+              },
+              {
+                "color": "green",
+                "value": 7.9
+              },
+              {
+                "color": "dark-green",
+                "value": 10.7
+              },
+              {
+                "color": "super-light-yellow",
+                "value": 13.8
+              },
+              {
+                "color": "yellow",
+                "value": 17.1
+              },
+              {
+                "color": "light-orange",
+                "value": 20.7
+              },
+              {
+                "color": "semi-dark-orange",
+                "value": 24.4
+              },
+              {
+                "color": "dark-orange",
+                "value": 28.4
+              },
+              {
+                "color": "semi-dark-red",
+                "value": 32.6
+              },
+              {
+                "color": "dark-red",
+                "value": 32.7
+              }
+            ]
+          },
+          "unit": "velocityms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 10
+      },
+      "id": 27,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "/^Direcao_Texto$/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1m)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Direcao_Texto\" )\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Humidade presente no Ar na ultima hora (média)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 10
+      },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"humidity\")\n  |> filter(fn: (r) => r._value <= 100)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Humidade do Ar (1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Ultimo valor recolhido de temperatura do sensor BMP388",
+      "fieldConfig": {
+        "defaults": {
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 45,
+          "min": -5,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "super-light-blue",
+                "value": -5
+              },
+              {
+                "color": "dark-blue",
+                "value": 0
+              },
+              {
+                "color": "dark-green",
+                "value": 15
+              },
+              {
+                "color": "dark-orange",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 35
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 16,
+        "y": 10
+      },
+      "id": 5,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "/^Temp_BMP388$/",
+          "values": false
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true,
+        "sizing": "auto",
+        "text": {}
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -5m)  \n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Temp_BMP388\")\n  |> last()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperatura BMP388",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Concentração média compostos organicos volateis na ultima hora.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "tVOC",
+          "fieldMinMax": false,
+          "mappings": [
+            {
+              "options": {
+                "from": 0,
+                "result": {
+                  "index": 0,
+                  "text": "Bom"
+                },
+                "to": 0.22
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 0.221,
+                "result": {
+                  "index": 1,
+                  "text": "Moderado"
+                },
+                "to": 0.66
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 0.0661,
+                "result": {
+                  "index": 2,
+                  "text": "Alto"
+                },
+                "to": 1.43
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 1.431,
+                "result": {
+                  "index": 3,
+                  "text": "Muito Alto"
+                },
+                "to": 2.2
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 2.201,
+                "result": {
+                  "index": 4,
+                  "text": "Muito Alto !"
+                },
+                "to": 3.3
+              },
+              "type": "range"
+            },
+            {
+              "options": {
+                "from": 3.301,
+                "result": {
+                  "index": 5,
+                  "text": "Muito Alto !!"
+                },
+                "to": 5.5
+              },
+              "type": "range"
+            }
+          ],
+          "max": 5.5,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              },
+              {
+                "color": "dark-green",
+                "value": 0
+              },
+              {
+                "color": "dark-yellow",
+                "value": 0.221
+              },
+              {
+                "color": "dark-orange",
+                "value": 0.661
+              },
+              {
+                "color": "dark-red",
+                "value": 1.431
+              },
+              {
+                "color": "dark-purple",
+                "value": 2.201
+              },
+              {
+                "color": "#3916df",
+                "value": 3.301
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 12
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)  \n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"voc\")\n  |> filter(fn: (r) => r._value <= 5000)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Humidade presente no solo na ultima hora (média)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-YlBl"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 13
+      },
+      "id": 33,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Humidade_Solo\")\n  |> filter(fn: (r) => r._value <= 100)\n  |> mean()\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Humidade do Solo (1h)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 26,
+      "panels": [],
+      "title": "Evolução Temporal ",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Leituras do GPS ultimas 24h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "id": 9,
+      "options": {
+        "basemap": {
+          "config": {
+            "server": "streets",
+            "showLabels": true,
+            "theme": "auto"
+          },
+          "name": "Layer 0",
+          "type": "osm-standard"
+        },
+        "controls": {
+          "mouseWheelZoom": false,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": true,
+          "showScale": true,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-red"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "A"
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "coords",
+          "lastOnly": false,
+          "lat": 41.17801,
+          "layer": "Layer 1",
+          "lon": -8.60605,
+          "zoom": 17
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lon\" or r._field == \"alt\")\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lon\", \"alt\"])\n",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eesst9edo6ltse"
+          },
+          "hide": false,
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lon\" or r._field == \"alt\")\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lon\", \"alt\"])\n",
+          "refId": "B"
+        }
+      ],
+      "title": "Localização",
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Altitude medida pelo GPS ultimas 24h.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "lengthm"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alt"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Altitude"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "\nfrom(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"alt\")\n  |> filter(fn: (r) => r._value <= 5000) \n  ",
+          "refId": "A"
+        }
+      ],
+      "title": "Altitude (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Gráfico evolução da temperatura dos sensores BMP388, BMP280 e Sensor de Formaldehyde",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "weather_station_v4 Temp_BMP280"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperatura BMP280"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "weather_station_v4 Temp_BMP388"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperatura BMP388"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "air_quality_v3 temperature"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Temperatura SF"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "min"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "eesst9edo6ltse"
+          },
+          "query": "temp_bmp = from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Temp_BMP388\" or r._field == \"Temp_BMP280\")\n  |> filter(fn: (r) => r._value <= 5000)\n\ntemp_airq = from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> filter(fn: (r) => r._value <= 5000)\n\nunion(tables: [temp_bmp, temp_airq])\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperatura BMP388 e BMP280 e SF (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Grafico pressão BMP388 e BMP280 (24h)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#5794F2",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "pressurehpa"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "// press_BMP388 e press_BMP280 nas últimas 24h\nfrom(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Press_BMP388\" or r._field == \"Press_BMP280\")\n  |> filter(fn: (r) => r._value <= 5000)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Pressão BMP388 e BMP280 (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Concentração CO2eq nas ultimas 24h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "CO2eq",
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"co2eq\")\n  |> filter(fn: (r) => r._value <= 5000)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Concentração CO2eq (24h)",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 28,
+      "libraryPanel": {
+        "name": "Concentração Formaldeído (24h)",
+        "uid": "desx1uxhvquioc"
+      },
+      "title": "Concentração Formaldeído (24h)",
+      "type": "library-panel-ref"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Concentração tVOC nas ultimas 24h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "tVOC",
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 29,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "last"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"voc\")\n  |> filter(fn: (r) => r._value <= 5000)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Concentração tVOC (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Grafico Concentração PM10 e PM2.5 (24h)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#5794F2",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pm10"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PM1.0"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "pm25"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PM2.5"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 30,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "// press_BMP388 e press_BMP280 nas últimas 24h\nfrom(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"pm10\" or r._field == \"pm25\")\n  |> filter(fn: (r) => r._value <= 5000)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Concentração PM10 e PM2.5 (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "AQI Index nas ultimas 24 horas.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "displayName": "AQI",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 500,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              },
+              {
+                "color": "dark-green",
+                "value": 50
+              },
+              {
+                "color": "dark-yellow",
+                "value": 100
+              },
+              {
+                "color": "orange",
+                "value": 150
+              },
+              {
+                "color": "dark-orange",
+                "value": 200
+              },
+              {
+                "color": "semi-dark-red",
+                "value": 300
+              },
+              {
+                "color": "dark-red",
+                "value": 400
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "id": 31,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"aqi\")\n  |> filter(fn: (r) => r._value <= 100)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "AQI Index (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Humidade Ar % nas ultimas 24 horas.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "Formaldehyde",
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "%"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 46
+      },
+      "id": 25,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"air_quality_v3\")\n  |> filter(fn: (r) => r._field == \"humidity\")\n  |> filter(fn: (r) => r._value <= 100)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Humidade Ar (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Humidade Solo em volts (tensao adc) na ultimas 24 horas.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 3.3,
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "Humidade Solo",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 3.3,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 53
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Tensao_ADC\")\n  |> filter(fn: (r) => r._value <= 5000)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Humidade Solo em Volts (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "eesst9edo6ltse"
+      },
+      "description": "Humidade Solo em percentagem nas ultimas 24 horas.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMax": 100,
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "Humidade Solo",
+          "fieldMinMax": false,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "text"
+              }
+            ]
+          },
+          "unit": "%"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 53
+      },
+      "id": 32,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "query": "from(bucket: \"weather\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"weather_station_v4\")\n  |> filter(fn: (r) => r._field == \"Humidade_Solo\")\n  |> filter(fn: (r) => r._value <= 100)\n\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Humidade Solo (24h)",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Weather Station",
+  "uid": "bc04427d-8dd4-4665-92e1-9efede2c6a2c",
+  "version": 111
+}
