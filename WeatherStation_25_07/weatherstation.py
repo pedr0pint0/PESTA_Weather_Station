@@ -28,7 +28,7 @@ broker_port = 1883
 
 bucket = "weather"
 org = "cister"
-token = "-790oFb-_gdC4tCG6x7jkHwDWM1U0xwSsNLumJOXiPQ1-PgKQbrnKMLYVBYCN3WxMARSATzczpTpmnKavUv8qw=="
+token = "token"
 url = "http://localhost:8086"
 
 client = influxdb_client.InfluxDBClient(
